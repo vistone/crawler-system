@@ -1,5 +1,10 @@
 # 爬虫反审查系统
 
+[![Go Version](https://img.shields.io/badge/go-1.25.4-blue.svg)](https://golang.org)
+[![Go Dev](https://pkg.go.dev/badge/github.com/vistone/crawler-system.svg)](https://pkg.go.dev/github.com/vistone/crawler-system)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-v1.0.0-green.svg)](https://github.com/vistone/crawler-system/releases/tag/v1.0.0)
+
 > 基于9个核心库构建的精细化控制反审查爬虫系统，支持双重角色（QUIC服务器 + 爬虫客户端），具备自动IP管理、证书管理、实时状态同步等核心功能。
 
 ## 📋 项目概述
