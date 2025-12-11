@@ -1,0 +1,340 @@
+# 爬虫反审查系统配置文件
+# Crawler Anti-Detection System Configuration
+
+# =============================================================================
+# 1. 日志配置 (logs)
+# =============================================================================
+[logs]
+# 日志级别: debug, info, warn, error
+level = "info"
+# 日志输出路径（空表示输出到标准输出）
+output_path = ""
+# 是否输出到文件
+file_enabled = true
+# 日志文件路径
+file_path = "./logs/crawler.log"
+# 日志文件最大大小（MB）
+max_size = 100
+# 保留的日志文件数量
+max_backups = 10
+# 是否压缩旧日志
+compress = true
+# 日志格式: json, text
+format = "text"
+# 是否显示调用位置
+show_caller = true
+
+# =============================================================================
+# 2. 指纹配置 (fingerprint)
+# =============================================================================
+[fingerprint]
+# 指纹选择策略: random, round_robin, least_used
+selection_strategy = "random"
+# 是否启用指纹轮换
+enable_rotation = true
+# 指纹轮换间隔（秒）
+rotation_interval = 300
+# 指纹库路径（空表示使用默认）
+library_path = ""
+# 支持的浏览器列表（空表示使用所有）
+# 可选: chrome, firefox, safari, edge, opera
+browsers = []
+# 是否启用操作系统随机化
+os_randomization = true
+# 是否启用User-Agent随机化
+ua_randomization = true
+
+# =============================================================================
+# 3. DNS解析配置 (domaindns)
+# =============================================================================
+[domaindns]
+# DNS服务器列表
+dns_servers = [
+    "8.8.8.8",
+    "8.8.4.4",
+    "1.1.1.1",
+    "1.0.0.1"
+]
+# DNS缓存启用
+cache_enabled = true
+# DNS缓存TTL（秒）
+cache_ttl = 3600
+# DNS查询超时（秒）
+timeout = 5
+# 最大重试次数
+max_retries = 3
+# 重试间隔（秒）
+retry_interval = 1
+# 是否启用DNS污染检测
+pollution_detection = true
+# 是否启用IPv6
+ipv6_enabled = true
+# IPInfo.io API Token（用于获取IP详细信息）
+ipinfo_token = "f6babc99a5ec26"
+
+# =============================================================================
+# 4. 本地IP池配置 (localippool)
+# =============================================================================
+[local_ip_pool]
+# 本地出口IP列表（用于绑定本地连接，与黑白名单无关）
+ips = [
+    # "192.168.1.100",
+    # "192.168.1.101",
+    # "192.168.1.102"
+]
+# IP选择策略: random, round_robin, least_used
+selection_strategy = "round_robin"
+# IP健康检查启用
+health_check_enabled = true
+# IP健康检查间隔（秒）
+health_check_interval = 60
+# IP健康检查超时（秒）
+health_check_timeout = 5
+# IP最大失败次数（超过后标记为不健康）
+max_failures = 3
+# IP恢复检查间隔（秒）
+recovery_check_interval = 300
+
+# =============================================================================
+# 5. 连接配置 (conn)
+# =============================================================================
+[conn]
+# 连接超时（秒）
+connect_timeout = 10
+# 读取超时（秒）
+read_timeout = 30
+# 写入超时（秒）
+write_timeout = 30
+# 是否启用Keep-Alive
+keep_alive = true
+# Keep-Alive时间（秒）
+keep_alive_time = 60
+# 最大空闲连接数
+max_idle_conns = 100
+# 每个主机的最大连接数
+max_conns_per_host = 10
+# TLS握手超时（秒）
+tls_handshake_timeout = 10
+# 是否跳过TLS证书验证（仅用于测试）
+insecure_skip_verify = false
+
+# =============================================================================
+# 6. TCP连接池配置 (netconnpool)
+# =============================================================================
+[netconnpool]
+# 最大连接数
+max_connections = 100
+# 初始连接数
+initial_connections = 10
+# 连接获取超时（秒）
+acquire_timeout = 5
+# 连接空闲超时（秒）
+idle_timeout = 300
+# 连接最大生存时间（秒）
+max_lifetime = 3600
+# 连接健康检查间隔（秒）
+health_check_interval = 60
+# 连接健康检查超时（秒）
+health_check_timeout = 5
+
+# =============================================================================
+# 7. QUIC连接池配置 (quic)
+# =============================================================================
+[quic]
+# 最大连接数
+max_connections = 50
+# 初始连接数
+initial_connections = 5
+# 连接获取超时（秒）
+acquire_timeout = 5
+# 连接空闲超时（秒）
+idle_timeout = 300
+# 连接最大生存时间（秒）
+max_lifetime = 3600
+# 连接健康检查间隔（秒）
+health_check_interval = 60
+# 连接健康检查超时（秒）
+health_check_timeout = 5
+# QUIC握手超时（秒）
+handshake_timeout = 10
+# 是否启用0-RTT
+enable_0rtt = true
+
+# =============================================================================
+# 8. 证书配置 (certs)
+# =============================================================================
+[certificate]
+# 服务端域名（VPS域名，用于QUIC服务端）
+server_domain = "kh.google.com"
+# 证书存储路径
+cert_storage_path = "./certs"
+# 证书提供商: letsencrypt, self-signed
+provider = "letsencrypt"
+# 是否自动续期
+auto_renewal = true
+# 证书续期检查间隔（小时）
+renewal_check_interval = 24
+# 证书提前续期天数（在过期前N天续期）
+renewal_before_days = 30
+# Let's Encrypt邮箱（用于证书申请）
+letsencrypt_email = "admin@example.com"
+# Let's Encrypt环境: production, staging
+letsencrypt_environment = "production"
+# 是否自动检测本地IP并加入证书
+auto_detect_local_ip = true
+# 自签名证书有效期（天）
+self_signed_validity_days = 365
+
+# =============================================================================
+# 9. 黑白名单配置 (whitelist-blacklist-manager)
+# =============================================================================
+[ip_status]
+# 白名单最小数量（低于此值告警）
+min_whitelist_count = 1
+# 白名单为空时是否允许启动（允许启动但不参与爬取）
+allow_start_when_empty = true
+# 是否启用白名单监控
+whitelist_monitoring = true
+# 白名单监控间隔（秒）
+whitelist_monitoring_interval = 60
+
+# =============================================================================
+# 10. IP池测试配置
+# =============================================================================
+[ip_pool_test]
+# 目标域名列表（系统会解析这些域名，测试解析出的目标服务器IP）
+target_domains = [
+    "kh.google.com"
+]
+# 测试URL（用于测试IP可用性，{domain}会被替换为实际域名）
+test_url = "https://{domain}/"
+# 测试方法: GET, HEAD
+test_method = "HEAD"
+# 最大并发测试数
+max_concurrent = 10
+# 测试超时（秒）
+test_timeout = 10
+# 重试次数
+retry_count = 2
+# 重试间隔（秒）
+retry_interval = 5
+# 测试间隔（秒，同一IP的测试间隔）
+test_interval = 300
+# 是否使用指纹模拟
+use_fingerprint = true
+# 测试成功状态码列表
+success_status_codes = [200, 201, 202, 204]
+# 测试失败状态码列表（会被加入黑名单）
+forbidden_status_codes = [403]
+
+# =============================================================================
+# 11. 黑名单恢复配置
+# =============================================================================
+[blacklist_recovery]
+# 是否启用黑名单恢复
+enabled = true
+# 检查间隔（秒）
+check_interval = 1800  # 30分钟
+# 每个IP的测试间隔（秒，避免频繁测试）
+ip_test_interval = 3600  # 1小时
+# 最大并发恢复测试数
+max_concurrent = 5
+# 测试超时（秒）
+test_timeout = 10
+# 测试URL（用于恢复测试）
+test_url = "https://{domain}/"
+# 测试方法: GET, HEAD
+test_method = "HEAD"
+# 是否使用指纹模拟
+use_fingerprint = true
+
+# =============================================================================
+# 12. 状态报告配置
+# =============================================================================
+[status_report]
+# 报告间隔（秒）
+report_interval = 5
+# 状态变化时是否立即报告
+report_on_change = true
+# 是否报告客户端详细信息
+report_client_details = true
+# 是否报告IP列表
+report_ip_list = true
+# 最大报告IP数量（超过此数量只报告数量，不报告列表）
+max_report_ips = 1000
+# 是否压缩状态数据
+compress_data = false
+
+# =============================================================================
+# 13. 服务端配置
+# =============================================================================
+[server]
+# QUIC服务端监听地址
+listen_address = "0.0.0.0:8443"
+# 是否启用QUIC服务端
+quic_enabled = true
+# 最大客户端连接数
+max_clients = 1000
+# 客户端连接超时（秒）
+client_timeout = 300
+# 是否启用客户端认证
+client_auth_enabled = false
+# 客户端认证证书路径（如果启用）
+client_cert_path = ""
+# 是否启用访问日志
+access_log_enabled = true
+# 访问日志路径
+access_log_path = "./logs/access.log"
+
+# =============================================================================
+# 14. 爬虫配置
+# =============================================================================
+[crawler]
+# 默认请求超时（秒）
+default_timeout = 30
+# 最大重试次数
+max_retries = 3
+# 重试间隔（秒）
+retry_interval = 2
+# 协议优先级: http3, http2, http1.1
+protocol_priority = ["http3", "http2", "http1.1"]
+# 是否启用协议降级
+protocol_fallback = true
+# 并发请求数
+concurrency = 10
+# 请求速率限制（每秒请求数，0表示不限制）
+rate_limit = 0
+# 是否启用请求队列
+queue_enabled = true
+# 请求队列大小
+queue_size = 1000
+# 是否启用请求去重
+deduplication_enabled = false
+# 去重缓存TTL（秒）
+deduplication_ttl = 3600
+
+# =============================================================================
+# 15. 系统配置
+# =============================================================================
+[system]
+# 系统名称
+name = "crawler-system"
+# 系统版本
+version = "1.0.0"
+# 工作目录
+work_dir = "./"
+# 数据目录
+data_dir = "./data"
+# 是否启用性能监控
+performance_monitoring = true
+# 性能监控间隔（秒）
+performance_interval = 60
+# 是否启用健康检查
+health_check_enabled = true
+# 健康检查端口
+health_check_port = 8080
+# 是否启用指标收集
+metrics_enabled = true
+# 指标收集端口
+metrics_port = 9090
+
