@@ -6,7 +6,6 @@ package crawler
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vistone/certs"
 	"github.com/vistone/domaindns"
@@ -15,6 +14,9 @@ import (
 	"github.com/vistone/logs"
 	"github.com/vistone/netconnpool"
 	"github.com/vistone/quic"
+
+	"github.com/vistone/crawler-system/internal/config"
+	"github.com/vistone/crawler-system/internal/moduleinit"
 )
 
 // System 系统主结构体，管理所有模块
@@ -23,10 +25,10 @@ type System struct {
 
 	// 9个核心模块
 	Logger             *logs.Logger
-	FingerprintManager *FingerprintManager
+	FingerprintManager *moduleinit.FingerprintManager
 	DNSMonitor         domaindns.DomainMonitor
 	LocalIPPool        localippool.IPPool
-	ConnManager        *ConnManager
+	ConnManager        *moduleinit.ConnManager
 	NetConnPool        *netconnpool.Pool
 	QUICPool           *quic.Pool
 	CertManager        *certs.Manager
@@ -48,26 +50,16 @@ type IPStatusManagerInterface interface {
 	SetWhitelistMonitoringInterval(interval int)
 }
 
-// FingerprintManager 指纹管理器包装
-type FingerprintManager struct {
-	config *FingerprintConfig
-}
-
-// ConnManager 连接管理器包装
-type ConnManager struct {
-	config *ConnConfig
-}
-
 // NewSystem 创建系统实例
 func NewSystem(configPath string) (*System, error) {
 	// 1. 加载配置
-	config, err := LoadConfig(configPath)
+	cfg, err := LoadConfig(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("加载配置失败: %w", err)
 	}
 
 	system := &System{
-		Config: config,
+		Config: cfg,
 	}
 
 	// 2. 初始化所有模块
@@ -124,289 +116,226 @@ func (s *System) Initialize() error {
 	return nil
 }
 
+// 配置转换函数
+func convertLogsConfig(cfg *LogsConfig) *config.LogsConfig {
+	return &config.LogsConfig{
+		Level:       cfg.Level,
+		FileEnabled: cfg.FileEnabled,
+		FilePath:    cfg.FilePath,
+		MaxSize:     cfg.MaxSize,
+		MaxBackups:  cfg.MaxBackups,
+		Compress:    cfg.Compress,
+		Format:      cfg.Format,
+		ShowCaller:  cfg.ShowCaller,
+	}
+}
+
+func convertFingerprintConfig(cfg *FingerprintConfig) *config.FingerprintConfig {
+	return &config.FingerprintConfig{
+		SelectionStrategy: cfg.SelectionStrategy,
+		EnableRotation:    cfg.EnableRotation,
+		RotationInterval:  cfg.RotationInterval,
+		LibraryPath:       cfg.LibraryPath,
+		Browsers:          cfg.Browsers,
+		OSRandomization:   cfg.OSRandomization,
+		UARandomization:   cfg.UARandomization,
+	}
+}
+
+func convertDomainDNSConfig(cfg *DomainDNSConfig) *config.DomainDNSConfig {
+	return &config.DomainDNSConfig{
+		DNSServers:         cfg.DNSServers,
+		CacheEnabled:       cfg.CacheEnabled,
+		CacheTTL:           cfg.CacheTTL,
+		Timeout:            cfg.Timeout,
+		MaxRetries:         cfg.MaxRetries,
+		RetryInterval:      cfg.RetryInterval,
+		PollutionDetection: cfg.PollutionDetection,
+		IPv6Enabled:        cfg.IPv6Enabled,
+		IPInfoToken:        cfg.IPInfoToken,
+	}
+}
+
+func convertLocalIPPoolConfig(cfg *LocalIPPoolConfig) *config.LocalIPPoolConfig {
+	return &config.LocalIPPoolConfig{
+		IPs:                   cfg.IPs,
+		SelectionStrategy:     cfg.SelectionStrategy,
+		HealthCheckEnabled:    cfg.HealthCheckEnabled,
+		HealthCheckInterval:   cfg.HealthCheckInterval,
+		HealthCheckTimeout:    cfg.HealthCheckTimeout,
+		MaxFailures:           cfg.MaxFailures,
+		RecoveryCheckInterval: cfg.RecoveryCheckInterval,
+	}
+}
+
+func convertCertificateConfig(cfg *CertificateConfig) *config.CertificateConfig {
+	return &config.CertificateConfig{
+		ServerDomain:           cfg.ServerDomain,
+		CertStoragePath:        cfg.CertStoragePath,
+		Provider:               cfg.Provider,
+		AutoRenewal:            cfg.AutoRenewal,
+		RenewalCheckInterval:   cfg.RenewalCheckInterval,
+		RenewalBeforeDays:      cfg.RenewalBeforeDays,
+		LetsEncryptEmail:       cfg.LetsEncryptEmail,
+		LetsEncryptEnvironment: cfg.LetsEncryptEnvironment,
+		SelfSignedValidityDays: cfg.SelfSignedValidityDays,
+		AutoDetectLocalIP:      cfg.AutoDetectLocalIP,
+	}
+}
+
+func convertIPStatusConfig(cfg *IPStatusConfig) *config.IPStatusConfig {
+	return &config.IPStatusConfig{
+		MinWhitelistCount:           cfg.MinWhitelistCount,
+		AllowStartWhenEmpty:         cfg.AllowStartWhenEmpty,
+		WhitelistMonitoring:         cfg.WhitelistMonitoring,
+		WhitelistMonitoringInterval: cfg.WhitelistMonitoringInterval,
+	}
+}
+
+func convertConnConfig(cfg *ConnConfig) *config.ConnConfig {
+	return &config.ConnConfig{
+		ConnectTimeout:      cfg.ConnectTimeout,
+		ReadTimeout:         cfg.ReadTimeout,
+		WriteTimeout:        cfg.WriteTimeout,
+		KeepAlive:           cfg.KeepAlive,
+		KeepAliveTime:       cfg.KeepAliveTime,
+		MaxIdleConns:        cfg.MaxIdleConns,
+		MaxConnsPerHost:     cfg.MaxConnsPerHost,
+		TLSHandshakeTimeout: cfg.TLSHandshakeTimeout,
+		InsecureSkipVerify:  cfg.InsecureSkipVerify,
+	}
+}
+
+func convertNetConnPoolConfig(cfg *NetConnPoolConfig) *config.NetConnPoolConfig {
+	return &config.NetConnPoolConfig{
+		MaxConnections:      cfg.MaxConnections,
+		InitialConnections:  cfg.InitialConnections,
+		AcquireTimeout:      cfg.AcquireTimeout,
+		IdleTimeout:         cfg.IdleTimeout,
+		MaxLifetime:         cfg.MaxLifetime,
+		HealthCheckInterval: cfg.HealthCheckInterval,
+		HealthCheckTimeout:  cfg.HealthCheckTimeout,
+	}
+}
+
+func convertQUICConfig(cfg *QUICConfig) *config.QUICConfig {
+	return &config.QUICConfig{
+		MaxConnections:      cfg.MaxConnections,
+		InitialConnections:  cfg.InitialConnections,
+		AcquireTimeout:      cfg.AcquireTimeout,
+		IdleTimeout:         cfg.IdleTimeout,
+		MaxLifetime:         cfg.MaxLifetime,
+		HealthCheckInterval: cfg.HealthCheckInterval,
+		HealthCheckTimeout:  cfg.HealthCheckTimeout,
+		HandshakeTimeout:    cfg.HandshakeTimeout,
+		Enable0RTT:          cfg.Enable0RTT,
+	}
+}
+
 // initLogs 初始化日志系统（模块1）
 func (s *System) initLogs() error {
-	cfg := s.Config.Logs
-
-	// 转换日志级别
-	var logLevel logs.LogLevel
-	switch cfg.Level {
-	case "debug":
-		logLevel = logs.Debug
-	case "info":
-		logLevel = logs.Info
-	case "warn":
-		logLevel = logs.Warn
-	case "error":
-		logLevel = logs.Error
-	default:
-		logLevel = logs.Info
+	cfg := convertLogsConfig(&s.Config.Logs)
+	logger, err := moduleinit.InitLogs(cfg)
+	if err != nil {
+		return err
 	}
-
-	// 创建日志器（启用彩色输出）
-	logger := logs.NewLogger(logLevel, true)
-
 	s.Logger = logger
-	s.Logger.Info("日志系统初始化完成，level=%s", cfg.Level)
 	return nil
 }
 
 // initFingerprint 初始化指纹模块（模块2）
 func (s *System) initFingerprint() error {
-	cfg := s.Config.Fingerprint
-
-	// 创建指纹管理器
-	fm := &FingerprintManager{
-		config: &cfg,
+	cfg := convertFingerprintConfig(&s.Config.Fingerprint)
+	fm, err := moduleinit.InitFingerprint(cfg, s.Logger)
+	if err != nil {
+		return err
 	}
-
 	s.FingerprintManager = fm
-	s.Logger.Info("指纹模块初始化完成，strategy=%s, rotation=%v", cfg.SelectionStrategy, cfg.EnableRotation)
 	return nil
 }
 
 // GetRandomFingerprint 获取随机指纹（包装fingerprint库）
-func (fm *FingerprintManager) GetRandomFingerprint() (*fingerprint.FingerprintResult, error) {
+// 注意：这个方法应该在FingerprintManager中实现，而不是在System中
+// 这里暂时保留作为占位符
+func GetRandomFingerprint(fm *moduleinit.FingerprintManager) (*fingerprint.FingerprintResult, error) {
 	return fingerprint.GetRandomFingerprint()
 }
 
 // initDomainDNS 初始化DNS解析模块（模块3）
 func (s *System) initDomainDNS() error {
-	cfg := s.Config.DomainDNS
-
-	// 获取目标域名列表（从IP池测试配置中获取）
+	cfg := convertDomainDNSConfig(&s.Config.DomainDNS)
 	targetDomains := s.Config.IPPoolTest.TargetDomains
-	if len(targetDomains) == 0 {
-		// 如果没有配置目标域名，跳过监控器创建
-		s.Logger.Warn("未配置目标域名，跳过DNS监控器创建")
-		return nil
-	}
-
-	// 使用NewMonitorWithGlobalDNSServers创建监控器
-	// 参数：domains, ipInfoToken, dnsServerFile, maxServers
-	ipInfoToken := cfg.IPInfoToken
-	if ipInfoToken == "" {
-		s.Logger.Warn("未配置IPInfo Token，IP详细信息获取功能将不可用")
-	}
-
-	monitor, err := domaindns.NewMonitorWithGlobalDNSServers(
-		targetDomains,
-		ipInfoToken, // 使用配置的IPInfo Token
-		"",          // dnsServerFile，空表示使用默认的dnsservernames.json
-		0,           // maxServers，0表示使用全部DNS服务器
-	)
+	monitor, err := moduleinit.InitDomainDNS(cfg, targetDomains, s.Logger)
 	if err != nil {
-		return fmt.Errorf("创建DNS监控器失败: %w", err)
+		return err
 	}
-
 	s.DNSMonitor = monitor
-
-	// 启动DomainMonitor，它会自动维护域名的IP地址变化
-	// 启动后会立即执行一次DNS解析，然后按配置的间隔定期更新
-	monitor.Start()
-
-	s.Logger.Info("DNS解析模块初始化完成，dns_servers=%d, target_domains=%d, domains=%v, note=DomainMonitor已启动，将自动维护域名IP地址",
-		len(cfg.DNSServers), len(targetDomains), targetDomains)
 	return nil
 }
 
 // initLocalIPPool 初始化本地IP池模块（模块4）
 func (s *System) initLocalIPPool() error {
-	cfg := s.Config.LocalIPPool
-
-	// 创建本地IP池（使用配置的IPv4列表，IPv6为空表示自动检测）
-	pool, err := localippool.NewLocalIPPool(cfg.IPs, "")
+	cfg := convertLocalIPPoolConfig(&s.Config.LocalIPPool)
+	pool, err := moduleinit.InitLocalIPPool(cfg, s.Logger)
 	if err != nil {
-		return fmt.Errorf("创建本地IP池失败: %w", err)
+		return err
 	}
-
 	s.LocalIPPool = pool
-	s.Logger.Info("本地IP池模块初始化完成，ipv4_count=%d, strategy=%s", len(cfg.IPs), cfg.SelectionStrategy)
 	return nil
 }
 
 // initCerts 初始化证书模块（模块5）
 func (s *System) initCerts() error {
-	cfg := s.Config.Certificate
-
-	// 创建证书配置（使用默认配置，后续根据实际API调整）
-	certConfig := certs.DefaultConfig()
-	// 注意：certs.Config的实际字段可能不同，这里先使用默认配置
-	// 后续需要根据实际API调整配置方式
-	_ = cfg // 暂时忽略配置，使用默认值
-
-	manager, err := certs.NewManager(certConfig)
+	cfg := convertCertificateConfig(&s.Config.Certificate)
+	manager, err := moduleinit.InitCerts(cfg, s.Logger)
 	if err != nil {
-		return fmt.Errorf("创建证书管理器失败: %w", err)
+		return err
 	}
-
 	s.CertManager = manager
-	s.Logger.Info("证书模块初始化完成，provider=%s, domain=%s, auto_renewal=%v", cfg.Provider, cfg.ServerDomain, cfg.AutoRenewal)
 	return nil
 }
 
 // initIPStatusManager 初始化黑白名单模块（模块6）
 func (s *System) initIPStatusManager() error {
-	cfg := s.Config.IPStatus
-
-	// TODO: 实际实现时使用真实的whitelist-blacklist-manager库
-	// manager := whitelist.NewManager()
-	// 这里先使用占位符实现
-	manager := &PlaceholderIPStatusManager{
-		whitelist:                   make(map[string]bool),
-		blacklist:                   make(map[string]string), // IP -> reason
-		minWhitelistCount:           cfg.MinWhitelistCount,
-		allowStartWhenEmpty:         cfg.AllowStartWhenEmpty,
-		whitelistMonitoring:         cfg.WhitelistMonitoring,
-		whitelistMonitoringInterval: cfg.WhitelistMonitoringInterval,
+	cfg := convertIPStatusConfig(&s.Config.IPStatus)
+	manager, err := moduleinit.InitIPStatusManager(cfg, s.Logger)
+	if err != nil {
+		return err
 	}
-
 	s.IPStatusManager = manager
-	s.Logger.Info("黑白名单模块初始化完成，min_whitelist_count=%d, allow_start_when_empty=%v",
-		cfg.MinWhitelistCount, cfg.AllowStartWhenEmpty)
 	return nil
-}
-
-// PlaceholderIPStatusManager 占位符黑白名单管理器实现
-type PlaceholderIPStatusManager struct {
-	whitelist                   map[string]bool
-	blacklist                   map[string]string
-	minWhitelistCount           int
-	allowStartWhenEmpty         bool
-	whitelistMonitoring         bool
-	whitelistMonitoringInterval int
-}
-
-func (m *PlaceholderIPStatusManager) AddToWhitelist(ip string) error {
-	m.whitelist[ip] = true
-	delete(m.blacklist, ip)
-	return nil
-}
-
-func (m *PlaceholderIPStatusManager) RemoveFromWhitelist(ip string, reason string) error {
-	delete(m.whitelist, ip)
-	return nil
-}
-
-func (m *PlaceholderIPStatusManager) AddToBlacklist(ip string, reason string) error {
-	m.blacklist[ip] = reason
-	delete(m.whitelist, ip)
-	return nil
-}
-
-func (m *PlaceholderIPStatusManager) GetStatus(ip string) string {
-	if m.whitelist[ip] {
-		return "whitelist"
-	}
-	if _, ok := m.blacklist[ip]; ok {
-		return "blacklist"
-	}
-	return "unknown"
-}
-
-func (m *PlaceholderIPStatusManager) GetWhitelistIPs() []string {
-	ips := make([]string, 0, len(m.whitelist))
-	for ip := range m.whitelist {
-		ips = append(ips, ip)
-	}
-	return ips
-}
-
-func (m *PlaceholderIPStatusManager) GetWhitelistCount() int {
-	return len(m.whitelist)
-}
-
-func (m *PlaceholderIPStatusManager) CheckSystemHealth() error {
-	if len(m.whitelist) == 0 && !m.allowStartWhenEmpty {
-		return fmt.Errorf("白名单为空且不允许启动")
-	}
-	return nil
-}
-
-func (m *PlaceholderIPStatusManager) SetMinWhitelistCount(count int) {
-	m.minWhitelistCount = count
-}
-
-func (m *PlaceholderIPStatusManager) SetAllowStartWhenEmpty(allow bool) {
-	m.allowStartWhenEmpty = allow
-}
-
-func (m *PlaceholderIPStatusManager) SetWhitelistMonitoring(enabled bool) {
-	m.whitelistMonitoring = enabled
-}
-
-func (m *PlaceholderIPStatusManager) SetWhitelistMonitoringInterval(interval int) {
-	m.whitelistMonitoringInterval = interval
 }
 
 // initConn 初始化连接模块（模块7）
 func (s *System) initConn() error {
-	cfg := s.Config.Conn
-
-	cm := &ConnManager{
-		config: &cfg,
+	cfg := convertConnConfig(&s.Config.Conn)
+	cm, err := moduleinit.InitConn(cfg, s.Logger)
+	if err != nil {
+		return err
 	}
-
 	s.ConnManager = cm
-	s.Logger.Info("连接模块初始化完成，connect_timeout=%d, read_timeout=%d", cfg.ConnectTimeout, cfg.ReadTimeout)
 	return nil
 }
 
 // initNetConnPool 初始化TCP连接池模块（模块8）
 func (s *System) initNetConnPool() error {
-	cfg := s.Config.NetConnPool
-
-	// 创建连接池配置（客户端模式）
-	poolConfig := netconnpool.DefaultConfig()
-
-	// 设置基本参数
-	poolConfig.MaxConnections = cfg.MaxConnections
-	poolConfig.MinConnections = cfg.InitialConnections
-	poolConfig.GetConnectionTimeout = time.Duration(cfg.AcquireTimeout) * time.Second
-	poolConfig.IdleTimeout = time.Duration(cfg.IdleTimeout) * time.Second
-	poolConfig.MaxLifetime = time.Duration(cfg.MaxLifetime) * time.Second
-	poolConfig.HealthCheckInterval = time.Duration(cfg.HealthCheckInterval) * time.Second
-	poolConfig.HealthCheckTimeout = time.Duration(cfg.HealthCheckTimeout) * time.Second
-
-	// 注意：客户端模式需要Dialer，但Dialer需要目标地址
-	// 由于在初始化时还不知道目标地址，这里暂时不创建连接池
-	// 连接池将在实际使用时按需创建
-	// 或者提供一个占位符Dialer，后续再替换
-	s.Logger.Info("TCP连接池配置已准备，max_connections=%d, initial_connections=%d, note=连接池将在需要时按需创建",
-		cfg.MaxConnections, cfg.InitialConnections)
-
-	// 暂时不创建连接池，返回nil表示成功（连接池延迟初始化）
+	cfg := convertNetConnPoolConfig(&s.Config.NetConnPool)
+	pool, err := moduleinit.InitNetConnPool(cfg, s.Logger)
+	if err != nil {
+		return err
+	}
+	s.NetConnPool = pool
 	return nil
 }
 
 // initQUICPool 初始化QUIC连接池模块（模块9）
 func (s *System) initQUICPool() error {
-	cfg := s.Config.QUIC
-
-	// 创建QUIC客户端连接池
-	// 注意：这里使用客户端池，服务端池需要TLS配置，在后续实现
-	minCap := cfg.InitialConnections
-	if minCap < 1 {
-		minCap = 1
+	cfg := convertQUICConfig(&s.Config.QUIC)
+	pool, err := moduleinit.InitQUICPool(cfg, s.Logger)
+	if err != nil {
+		return err
 	}
-	maxCap := cfg.MaxConnections
-	if maxCap < minCap {
-		maxCap = minCap
-	}
-
-	pool := quic.NewClientPool(
-		minCap,
-		maxCap,
-		time.Duration(cfg.IdleTimeout)*time.Second,
-		time.Duration(cfg.MaxLifetime)*time.Second,
-		time.Duration(cfg.IdleTimeout)*time.Second,
-		"",  // tlsCode，后续从配置读取
-		"",  // hostname，后续从配置读取
-		nil, // addrResolver，后续实现
-	)
-
 	s.QUICPool = pool
-	s.Logger.Info("QUIC连接池模块初始化完成，max_connections=%d, enable_0rtt=%v", cfg.MaxConnections, cfg.Enable0RTT)
 	return nil
 }
 
